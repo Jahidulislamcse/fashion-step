@@ -123,4 +123,10 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'aliases' => [
+        // ...
+        'DNS1D' => Milon\Barcode\DNS1D::class,
+        'DNS2D' => Milon\Barcode\DNS2D::class,
+    ],
+
 ];

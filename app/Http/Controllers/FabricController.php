@@ -9,7 +9,7 @@ use App\Http\Requests\UpdateFabricRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Milon\Barcode\Facades\DNS1D;
+use Milon\Barcode\DNS1D;
 
 class FabricController extends Controller
 {
@@ -113,9 +113,17 @@ class FabricController extends Controller
         $fabric = Fabric::findOrFail($id);
         $barcode = $fabric->barcodes()->latest()->first();
 
-        $svg = DNS1D::getBarcodeSVG($barcode->barcode_value, 'C128');
+        if (!$barcode) {
+            return response()->json(['message' => 'No barcode found for this fabric'], 404);
+        }
+
+        $dns1d = new DNS1D();
+
+        $svg = $dns1d->getBarcodeSVG($barcode->barcode_value, 'C128');
+
         $html = "<h3>{$fabric->fabric_no}</h3>{$svg}<p>{$barcode->barcode_value}</p>";
 
         return response($html);
     }
+
 }

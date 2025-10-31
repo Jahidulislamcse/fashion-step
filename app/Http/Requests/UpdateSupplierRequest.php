@@ -13,7 +13,7 @@ class UpdateSupplierRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('supplier');
+        $id = $this->route('supplier')->id ?? $this->route('supplier');
         return [
             'country' => 'required|string|max:255',
             'company_name' => 'required|string|max:255',

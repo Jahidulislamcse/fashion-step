@@ -62,18 +62,31 @@ class FabricController extends Controller
 
     public function update(UpdateFabricRequest $request, Fabric $fabric)
     {
+        if ($request->isMethod('put') && empty($request->all())) {
+            $request->merge($request->post());
+        }
+
         $data = $request->validated();
+
         if ($request->hasFile('image')) {
             if ($fabric->image_path && Storage::disk('public')->exists($fabric->image_path)) {
                 Storage::disk('public')->delete($fabric->image_path);
             }
+
             $path = $request->file('image')->store('fabrics', 'public');
             $data['image_path'] = $path;
         }
 
+        unset($data['image']);
+
         $data['updated_by'] = auth()->id() ?? 1;
+
         $fabric->update($data);
-        return response()->json(['message' => 'Fabric updated', 'data' => $fabric]);
+
+        return response()->json([
+            'message' => 'Fabric updated successfully',
+            'data' => $fabric->fresh(), 
+        ]);
     }
 
     public function destroy(Fabric $fabric)
@@ -82,5 +95,27 @@ class FabricController extends Controller
         return response()->json(['message' => 'Fabric soft-deleted']);
     }
 
-    
+    public function trash()
+    {
+        $trashed = Fabric::onlyTrashed()->paginate(10);
+        return response()->json($trashed);
+    }
+
+    public function restore($id)
+    {
+        $fabric = Fabric::withTrashed()->findOrFail($id);
+        $fabric->restore();
+        return response()->json(['message' => 'Fabric restored']);
+    }
+
+    public function printBarcode($id)
+    {
+        $fabric = Fabric::findOrFail($id);
+        $barcode = $fabric->barcodes()->latest()->first();
+
+        $svg = DNS1D::getBarcodeSVG($barcode->barcode_value, 'C128');
+        $html = "<h3>{$fabric->fabric_no}</h3>{$svg}<p>{$barcode->barcode_value}</p>";
+
+        return response($html);
+    }
 }
